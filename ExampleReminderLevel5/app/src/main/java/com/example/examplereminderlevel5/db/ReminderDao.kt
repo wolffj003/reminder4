@@ -1,5 +1,6 @@
 package com.example.examplereminderlevel5.db
 
+import androidx.lifecycle.LiveData
 import androidx.room.*
 import com.example.examplereminderlevel5.model.Reminder
 
@@ -7,17 +8,14 @@ import com.example.examplereminderlevel5.model.Reminder
 interface ReminderDao {
 
     @Query("SELECT * FROM reminderTable")
-    suspend fun getAllReminders(): List<Reminder>
+    fun getAllReminders(): LiveData<List<Reminder>>
 
     @Query("DELETE FROM reminderTable")
-    suspend fun deleteAllReminders()
+    fun deleteAllReminders()
 
     @Insert
     suspend fun insertReminder(reminder: Reminder)
 
     @Delete
     suspend fun deleteReminder(reminder: Reminder)
-
-    @Update
-    suspend fun updateReminder(reminder: Reminder)
 }

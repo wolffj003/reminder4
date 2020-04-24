@@ -4,7 +4,10 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,7 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
-    private lateinit var reminderRepository: ReminderRepository
+    private val viewModel: MainActivityViewModel by viewModels()
 
     var reminders = arrayListOf<Reminder>()
 
@@ -34,9 +37,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        reminderRepository = ReminderRepository(this)
-
         createItemTouchHelper().attachToRecyclerView(rvReminders)
+
+        initViews()
+        observeViewModel()
+    }
+
+    private fun initViews() {
+        fabAddReminder.setOnClickListener { startAddActivity() }
 
         viewManager = LinearLayoutManager(this)
         viewAdapter = ReminderAdapter(reminders)
@@ -46,24 +54,15 @@ class MainActivity : AppCompatActivity() {
             layoutManager = viewManager
             adapter = viewAdapter
         }
-
-        initViews()
     }
 
-    private fun initViews() {
-        fabAddReminder.setOnClickListener { startAddActivity() }
-        getRemindersFromDB()
-    }
-
-    private fun getRemindersFromDB() {  // For filling AND updating view
-        CoroutineScope(Dispatchers.Main).launch {
-            val reminders = withContext(Dispatchers.IO) {
-                reminderRepository.getAllReminders()
-            }
+    private fun observeViewModel() {
+        viewModel.reminders.observe(this, Observer { reminders ->
             this@MainActivity.reminders.clear()
             this@MainActivity.reminders.addAll(reminders)
             viewAdapter.notifyDataSetChanged()
-        }
+        })
+
     }
 
 
@@ -78,12 +77,7 @@ class MainActivity : AppCompatActivity() {
             when (requestCode) {
                 ADD_REMINDER_REQUEST_CODE -> {
                     val reminder = data!!.getParcelableExtra<Reminder>(EXTRA_REMINDER)
-                    CoroutineScope(Dispatchers.Main).launch {
-                        withContext(Dispatchers.IO) {
-                            reminderRepository.insertReminder(reminder)
-                        }
-                        getRemindersFromDB()
-                    }
+                    viewModel.insertReminder(reminder)
                 }
             }
         }
@@ -91,11 +85,8 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun createItemTouchHelper(): ItemTouchHelper {
-        // Callback which is used to create the ItemTouch helper. Only enables left swipe.
-        // Use ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) to also enable right swipe.
         val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
 
-            // Enables or Disables the ability to move items up and down.
             override fun onMove(
                 recyclerView: RecyclerView,
                 viewHolder: ViewHolder,
@@ -104,18 +95,11 @@ class MainActivity : AppCompatActivity() {
                 return false
             }
 
-            // Callback triggered when a user swiped an item.
             override fun onSwiped(viewHolder: ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val reminderToDelete = reminders[position]
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    withContext(Dispatchers.IO) {
-                        reminderRepository.deleteReminder(reminderToDelete)
-                    }
-                    getRemindersFromDB()
-                }
-
+                viewModel.deleteReminder(reminderToDelete)
             }
         }
         return ItemTouchHelper(callback)
@@ -137,12 +121,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun deleteAllProducts() {
-        CoroutineScope(Dispatchers.Main).launch {
-            withContext(Dispatchers.IO) {
-                reminderRepository.deleteAllReminders()
-            }
-            getRemindersFromDB()
-
-        }
+        viewModel.deleteAllReminders()
     }
 }
