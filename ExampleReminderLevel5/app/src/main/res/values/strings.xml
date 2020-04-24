@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Example Reminder</string>
+    <string name="action_settings">Settings</string>
+    <string name="hintText">Add reminder</string>
+    <string name="title_activity_add">AddActivity</string>
+
+    <string name="tvAddReminder">Add your reminder.</string>
+
+    <!--  Menu  -->
+    <string name="menuDelete">Delete all reminders</string>
+
+</resources>
