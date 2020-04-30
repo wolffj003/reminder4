@@ -15,7 +15,7 @@ class ReminderRepository(context: Context) {
     }
 
     fun getAllReminders(): LiveData<List<Reminder>> {
-        return reminderDao?.getAllReminders() ?: MutableLiveData(emptyList())
+        return reminderDao?.getAllReminders()
     }
 
     fun deleteAllReminders() {
